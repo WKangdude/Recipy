@@ -7,7 +7,6 @@ import {
   BookOpen,
   CalendarDays,
   Check,
-  CheckCheck,
   ChevronLeft,
   ChevronRight,
   Clock3,
@@ -15,10 +14,10 @@ import {
   Leaf,
   LayoutDashboard,
   Moon,
+  Package,
   Plus,
   Search,
   Settings2,
-  Sparkles,
   Sun,
   Trash2,
   Utensils,
@@ -36,11 +35,18 @@ import {
   targets,
   totals,
 } from "../lib/data";
+import {
+  Inventory,
+  equivalents,
+  stockStatus,
+  formatQuantity,
+} from "../lib/inventory";
 const tabs = [
   { name: "Mi día", icon: LayoutDashboard },
   { name: "Mi plan", icon: BookOpen },
   { name: "Mis platillos", icon: CookingPot },
   { name: "Planificador", icon: CalendarDays },
+  { name: "Inventario", icon: Package },
 ];
 function DishArt({ color, small = false }: { color: string; small?: boolean }) {
   return (
@@ -65,6 +71,7 @@ export default function Home() {
   const [date, setDate] = useState(localDate());
   const [dishes, setDishes] = useState<Dish[]>(seedDishes);
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [inventory, setInventory] = useState<Inventory>({});
   const [ready, setReady] = useState(false);
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState("Todos");
@@ -87,6 +94,18 @@ export default function Home() {
           setDishes(data.dishes);
           setEntries(data.entries);
           setPlan(data.plan);
+          if (data.inventory && typeof data.inventory === "object")
+            setInventory(
+              Object.fromEntries(
+                Object.entries(data.inventory).filter(
+                  ([id, n]) =>
+                    equivalents[id] &&
+                    typeof n === "number" &&
+                    Number.isFinite(n) &&
+                    n >= 0,
+                ),
+              ) as Inventory,
+            );
         }
       }
       setDark(localStorage.getItem("recipy-theme") === "dark");
@@ -100,13 +119,13 @@ export default function Home() {
       try {
         localStorage.setItem(
           "recipy-v1",
-          JSON.stringify({ dishes, entries, plan }),
+          JSON.stringify({ dishes, entries, plan, inventory }),
         );
       } catch {
         setToast("El navegador no pudo guardar los cambios.");
       }
     }
-  }, [dishes, entries, plan, ready]);
+  }, [dishes, entries, plan, inventory, ready]);
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? "dark" : "light";
     if (ready) localStorage.setItem("recipy-theme", dark ? "dark" : "light");
@@ -206,18 +225,6 @@ export default function Home() {
             </button>
           ))}
         </nav>
-        <div className="sidebar-note">
-          <div className="note-icon">
-            <Leaf size={22} />
-          </div>
-          <strong>Un día a la vez.</strong>
-          <p>
-            Comer bien también es
-            <br />
-            cuidar de ti.
-          </p>
-          <span className="note-line" />
-        </div>
         <div className="sidebar-bottom">
           <button className="theme-button" onClick={() => setDark(!dark)}>
             {dark ? <Sun size={18} /> : <Moon size={18} />}
@@ -253,46 +260,30 @@ export default function Home() {
         <div className="content">
           <div className="page-heading">
             <div>
-              <div className="eyebrow">TU ALIMENTACIÓN, EN EQUILIBRIO</div>
-              <h1>
-                {tab === "Mi día"
-                  ? "Un buen día empieza contigo."
-                  : tab === "Mi plan"
-                    ? "Tu plan, a la mano."
-                    : tab === "Mis platillos"
-                      ? "Hechos por ti, para ti."
-                      : "Dale espacio a comer bien."}
-              </h1>
-              <p>
-                {tab === "Mi día"
-                  ? "Organiza tus comidas y encuentra tu propio equilibrio."
-                  : tab === "Mi plan"
-                    ? "Consulta alimentos, equivalencias y porciones por comida."
-                    : tab === "Mis platillos"
-                      ? "Tus recetas favoritas, con las porciones bien claras."
-                      : "Planea con calma. Disfruta cada comida."}
-              </p>
+              <h1>{tab}</h1>
             </div>
-            <button
-              className="button primary"
-              onClick={() => {
-                setEditing(null);
-                setModal(tab === "Mis platillos" ? "dish" : "schedule");
-                setMeal("Comida");
-              }}
-            >
-              <Plus size={18} />
-              {tab === "Mis platillos" ? "Nuevo platillo" : "Planear comida"}
-            </button>
+            {tab !== "Inventario" && tab !== "Mi plan" && (
+              <button
+                className="button primary"
+                onClick={() => {
+                  setEditing(null);
+                  setModal(tab === "Mis platillos" ? "dish" : "schedule");
+                  setMeal("Comida");
+                }}
+              >
+                <Plus size={18} />
+                {tab === "Mis platillos" ? "Nuevo platillo" : "Planear comida"}
+              </button>
+            )}
           </div>
-          <div className="demo-banner">
-            <Sparkles size={17} />
-            <span>
-              <strong>Un primer vistazo a tu Recipy.</strong> Los alimentos y
-              objetivos son de ejemplo. Los cambiaremos por tu plan real cuando
-              lo compartas.
-            </span>
-          </div>
+          {tab === "Mi plan" && (
+            <p className="sample-note">
+              Plan de ejemplo · pendiente de tus datos
+            </p>
+          )}
+          {tab === "Inventario" && (
+            <InventoryPanel inventory={inventory} onChange={setInventory} />
+          )}
           {(tab === "Mi día" || tab === "Planificador") && (
             <>
               <div className="date-row">
@@ -327,33 +318,6 @@ export default function Home() {
               </div>
               <div className="dashboard-grid">
                 <section className="day-main">
-                  {tab === "Mi día" && (
-                    <div className="hero">
-                      <div className="hero-copy">
-                        <span className="hero-kicker">
-                          <span /> PEQUEÑOS PASOS, GRANDES HÁBITOS
-                        </span>
-                        <h2>
-                          Tu plan.
-                          <br />A tu manera.
-                        </h2>
-                        <p>
-                          Una comida a la vez, más cerca
-                          <br />
-                          de tus objetivos.
-                        </p>
-                        <button onClick={() => navigate("Mi plan")}>
-                          Conoce tu plan <ArrowRight size={16} />
-                        </button>
-                      </div>
-                      <div className="hero-art">
-                        <DishArt color="green" />
-                        <span className="floating-tag">
-                          <CheckCheck size={16} /> Hecho para tu equilibrio
-                        </span>
-                      </div>
-                    </div>
-                  )}
                   <div className="section-heading">
                     <h2>
                       {tab === "Planificador"
@@ -485,16 +449,6 @@ export default function Home() {
                       </div>
                     ))}
                   </div>
-                  <div className="summary-footer">
-                    <span className="soft-icon">
-                      <Check size={17} />
-                    </span>
-                    <p>
-                      El equilibrio se construye
-                      <br />
-                      <strong>comida a comida.</strong>
-                    </p>
-                  </div>
                   <button
                     className="text-button"
                     onClick={() => navigate("Mi plan")}
@@ -599,7 +553,7 @@ export default function Home() {
                         <h3>{f.name}</h3>
                         <p>{f.equivalent}</p>
                       </div>
-                      <span className="tag neutral">{f.group}</span>
+                      <StockTag foodId={f.id} inventory={inventory} />
                     </article>
                   ))}
               </div>
@@ -623,9 +577,6 @@ export default function Home() {
                       ? "Ideas de tu recetario"
                       : "Tu recetario"}
                   </h2>
-                  {tab === "Mi día" && (
-                    <p className="muted">Algo rico, algo tuyo.</p>
-                  )}
                 </div>
                 {tab === "Mi día" ? (
                   <button
@@ -662,9 +613,8 @@ export default function Home() {
                     >
                       <DishArt color={d.color} />
                       <div className="recipe-info">
-                        <span className="recipe-eyebrow">TU RECETARIO</span>
                         <h3>{d.name}</h3>
-                        <p>{d.description}</p>
+
                         <div className="recipe-meta">
                           <span>
                             <Utensils size={14} />
@@ -688,11 +638,6 @@ export default function Home() {
               )}
             </section>
           )}
-          <footer>
-            Hecho para cuidarte, a tu ritmo.
-            <Leaf size={13} />
-            <span>recipy</span>
-          </footer>
         </div>
       </main>
       {toast && (
@@ -736,7 +681,6 @@ export default function Home() {
             </button>
             {selected ? (
               <>
-                <span className="eyebrow">TU RECETARIO</span>
                 <h2>{selected.name}</h2>
                 <p className="muted">{selected.description}</p>
                 <h3>Ingredientes · {selected.servings} ración(es)</h3>
@@ -744,7 +688,10 @@ export default function Home() {
                   {selected.ingredients.map((i, index) => (
                     <li key={index}>
                       <span>{foods.find((f) => f.id === i.foodId)?.name}</span>
-                      <strong>{i.portions} porción(es)</strong>
+                      <div className="ingredient-stock">
+                        <strong>{i.portions} porción(es)</strong>
+                        <StockTag foodId={i.foodId} inventory={inventory} />
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -891,7 +838,6 @@ function DishForm({
         });
       }}
     >
-      <span className="eyebrow">ALGO RICO EMPIEZA AQUÍ</span>
       <h2>{initial ? "Editar platillo" : "Nuevo platillo"}</h2>
       <p className="muted">Registra las porciones de la receta completa.</p>
       <label className="field">
@@ -1030,7 +976,6 @@ function ScheduleForm({
         });
       }}
     >
-      <span className="eyebrow">UN ESPACIO PARA COMER BIEN</span>
       <h2>Planea tu comida</h2>
       <p className="muted">
         Elige un platillo y nosotros sumamos las porciones.
@@ -1090,5 +1035,160 @@ function ScheduleForm({
         Añadir al calendario <CalendarDays size={17} />
       </button>
     </form>
+  );
+}
+
+function StockTag({
+  foodId,
+  inventory,
+}: {
+  foodId: string;
+  inventory: Inventory;
+}) {
+  const status = stockStatus(foodId, inventory[foodId]);
+  return (
+    <div className="stock-state">
+      <span className={`tag ${status.tone}`}>{status.label}</span>
+      {status.portions !== null && status.portions > 0 && (
+        <small>{formatQuantity(status.portions)} porciones disponibles</small>
+      )}
+    </div>
+  );
+}
+function InventoryPanel({
+  inventory,
+  onChange,
+}: {
+  inventory: Inventory;
+  onChange: (value: Inventory) => void;
+}) {
+  const [foodId, setFoodId] = useState(foods[0].id);
+  const [quantity, setQuantity] = useState("");
+  const [search, setSearch] = useState("");
+  const registered = foods.filter(
+    (f) =>
+      inventory[f.id] !== undefined &&
+      f.name.toLowerCase().includes(search.toLowerCase()),
+  );
+  const low = foods.filter(
+    (f) =>
+      inventory[f.id] !== undefined &&
+      stockStatus(f.id, inventory[f.id]).tone !== "ok",
+  ).length;
+  return (
+    <section className="inventory-panel">
+      <div className="inventory-summary">
+        <span>
+          <Package size={18} />
+          <strong>{Object.keys(inventory).length}</strong> alimentos registrados
+        </span>
+        <span>{low} por reponer</span>
+      </div>
+      <form
+        className="inventory-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const value = Number(quantity);
+          if (quantity !== "" && Number.isFinite(value) && value >= 0) {
+            onChange({ ...inventory, [foodId]: value });
+            setQuantity("");
+          }
+        }}
+      >
+        <label className="field">
+          Alimento
+          <select
+            value={foodId}
+            onChange={(e) => {
+              setFoodId(e.target.value);
+              setQuantity("");
+            }}
+          >
+            {foods.map((f) => (
+              <option value={f.id} key={f.id}>
+                {f.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field">
+          Cantidad actual ({equivalents[foodId].unit})
+          <input
+            type="number"
+            min="0"
+            max="100000"
+            step="any"
+            required
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            placeholder={
+              inventory[foodId] !== undefined ? String(inventory[foodId]) : "0"
+            }
+          />
+        </label>
+        <button className="button primary" type="submit">
+          <Plus size={17} />
+          Guardar cantidad
+        </button>
+      </form>
+      <p className="inventory-help">
+        Registra la cantidad total que te queda, en la unidad indicada. Planear
+        comidas no descuenta inventario.
+      </p>
+      <div className="section-heading">
+        <h2>En casa</h2>
+        <label className="search">
+          <Search size={16} />
+          <input
+            aria-label="Buscar en inventario"
+            placeholder="Buscar alimento…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </label>
+      </div>
+      {registered.length ? (
+        <div className="inventory-list">
+          {registered.map((f) => (
+            <article key={f.id} className="inventory-item">
+              <span
+                className={`food-group group-bg-${groups.indexOf(f.group)}`}
+              >
+                <Leaf size={18} />
+              </span>
+              <div className="inventory-name">
+                <h3>{f.name}</h3>
+                <p>
+                  {formatQuantity(inventory[f.id])} {equivalents[f.id].unit}{" "}
+                  <span>· 1 porción = {f.equivalent}</span>
+                </p>
+              </div>
+              <StockTag foodId={f.id} inventory={inventory} />
+              <button
+                className="icon-button"
+                aria-label={`Eliminar ${f.name} del inventario`}
+                onClick={() => {
+                  const next = { ...inventory };
+                  delete next[f.id];
+                  onChange(next);
+                }}
+              >
+                <Trash2 size={17} />
+              </button>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="empty">
+          {Object.keys(inventory).length
+            ? "Sin resultados."
+            : "Añade tu primer alimento con el formulario."}
+        </div>
+      )}
+      <p className="inventory-help">
+        Pronto a acabarse: quedan menos de 3 porciones completas. Sin registrar:
+        aún no has indicado una cantidad.
+      </p>
+    </section>
   );
 }

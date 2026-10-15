@@ -1695,3 +1695,204 @@ textarea {
     width: 69%;
   }
 }
+/* Quieter workspace: one title and one primary action per view. */
+h1 {
+  font-size: 29px;
+  letter-spacing: -0.8px;
+}
+.page-heading {
+  margin-bottom: 25px;
+}
+.sidebar nav {
+  margin-top: 35px;
+}
+.workspace-label {
+  display: none;
+}
+.sidebar-bottom {
+  margin-top: auto;
+}
+.recipe-info h3 {
+  margin-top: 0;
+}
+.recipe-meta {
+  margin-top: 12px;
+}
+.sample-note {
+  font-size: 11px;
+  color: var(--muted);
+  margin: -12px 0 24px;
+}
+.summary {
+  margin-top: 25px;
+}
+.day-main > .section-heading:first-child {
+  margin-top: 0;
+}
+.stock-state {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-start;
+}
+.stock-state small {
+  font-size: 10px;
+  color: var(--muted);
+}
+.food-card > .stock-state {
+  margin-left: auto;
+}
+.food-card .stock-state .tag {
+  display: inline-flex;
+}
+.food-card {
+  flex-wrap: wrap;
+}
+.ingredient-stock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+.ingredient-stock .stock-state {
+  align-items: flex-end;
+}
+.inventory-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 0 23px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.inventory-summary > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.inventory-summary strong {
+  color: var(--text);
+}
+.inventory-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 18px;
+  align-items: end;
+  padding: 23px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--surface);
+}
+.inventory-form .field {
+  margin-top: 0;
+}
+.inventory-form .button {
+  min-height: 42px;
+}
+.inventory-help {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.8;
+  margin: 12px 0 24px;
+}
+.inventory-list {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.inventory-item {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.inventory-item:last-child {
+  border-bottom: 0;
+}
+.inventory-name {
+  flex: 1;
+}
+.inventory-name h3 {
+  font-size: 13px;
+}
+.inventory-name p {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 6px;
+  line-height: 1.6;
+}
+.inventory-name p span {
+  display: block;
+  font-size: 10px;
+}
+@media (max-width: 950px) {
+  .inventory-form {
+    grid-template-columns: 1fr 1fr;
+  }
+  .inventory-form .button {
+    grid-column: 1 / -1;
+  }
+  .summary {
+    margin-top: 0;
+  }
+}
+@media (max-width: 650px) {
+  .sidebar nav {
+    margin-top: 0;
+  }
+  .nav-item {
+    font-size: 8px;
+  }
+  h1 {
+    font-size: 27px;
+  }
+  .page-heading {
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  .page-heading > .button {
+    margin-top: 0;
+    font-size: 11px;
+    padding: 11px;
+  }
+  .local-badge {
+    display: none;
+  }
+  .mobile-theme {
+    margin-left: auto;
+  }
+  .inventory-form {
+    padding: 17px;
+    gap: 15px;
+    grid-template-columns: 1fr;
+  }
+  .inventory-item {
+    padding: 17px 13px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .inventory-item .food-group {
+    display: none;
+  }
+  .inventory-name {
+    flex-basis: 45%;
+  }
+  .inventory-item .stock-state {
+    max-width: 135px;
+  }
+  .inventory-panel > .section-heading {
+    flex-wrap: wrap;
+  }
+  .inventory-panel .search {
+    width: 100%;
+  }
+  .food-card > .stock-state {
+    margin-left: 48px;
+    flex-basis: 100%;
+  }
+  .recipe-card .dish-art {
+    min-height: 118px;
+  }
+}

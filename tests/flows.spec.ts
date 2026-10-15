@@ -4,7 +4,7 @@ test("crear receta, comprobar porciones, planificar y conservar cambios", async 
 }) => {
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Un buen día empieza contigo." }),
+    page.getByRole("heading", { name: "Mi día", exact: true }),
   ).toBeVisible();
   await page
     .getByRole("button", { name: "Mis platillos", exact: true })
@@ -80,4 +80,55 @@ test("tema y edición de objetivos persisten", async ({ page }, info) => {
     path: `test-results/plan-dark-${info.project.name}.png`,
     fullPage: true,
   });
+});
+
+test("inventario convierte gramos a porciones y señala existencias en el plan", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Inventario", exact: true }).click();
+  await page.getByRole("combobox", { name: "Alimento", exact: true }).selectOption("pollo");
+  await page.getByLabel("Cantidad actual (g cocidos)").fill("65");
+  await page.getByRole("button", { name: "Guardar cantidad" }).click();
+  const row = page
+    .locator(".inventory-item")
+    .filter({ has: page.getByRole("heading", { name: "Pechuga de pollo" }) });
+  await expect(
+    row.getByText("Pronto a acabarse", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    row.getByText("2.17 porciones disponibles", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Mi plan", exact: true }).click();
+  const card = page
+    .locator(".food-card")
+    .filter({ has: page.getByRole("heading", { name: "Pechuga de pollo" }) });
+  await expect(
+    card.getByText("Pronto a acabarse", { exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  await page.getByRole("button", { name: "Inventario", exact: true }).click();
+  await expect(row.getByText("65 g cocidos", { exact: false })).toBeVisible();
+  await page.getByRole("combobox", { name: "Alimento", exact: true }).selectOption("pollo");
+  await page.getByLabel("Cantidad actual (g cocidos)").fill("90");
+  await page.getByRole("button", { name: "Guardar cantidad" }).click();
+  await expect(row.getByText("Disponible", { exact: true })).toBeVisible();
+  await page.getByLabel("Cantidad actual (g cocidos)").fill("0");
+  await page.getByRole("button", { name: "Guardar cantidad" }).click();
+  await expect(row.getByText("Sin existencias", { exact: true })).toBeVisible();
+  await page
+    .getByRole("button", { name: "Eliminar Pechuga de pollo del inventario" })
+    .click();
+  await expect(
+    page.getByText("Añade tu primer alimento con el formulario."),
+  ).toBeVisible();
+  await page.screenshot({
+    path: `test-results/inventory-${test.info().project.name}.png`,
+    fullPage: true,
+  });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBeTruthy();
 });
